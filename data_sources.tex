@@ -1,0 +1,147 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{csquotes}
+\usepackage{fullpage}
+
+%-----------------------------------------------
+\setlength{\parindent}{0pt}
+\input{C:/Users/homolka/Desktop/Habilitace/Data/listings_setup.tex}
+\graphicspath{{./Figures/}}
+% ==============================================
+\begin{document}
+
+
+\section*{Data Providers}
+\subsection*{Eurostat}
+
+\href{https://ec.europa.eu/eurostat/data/database}{\textcolor{NavyBlue}{Eurostat}} names the tables as Online data code. Sometimes, it is required to explicitly use \enquote{\texttt{flowRef="table\_name"}} parameter in the \texttt{pdfetch} function.
+
+\begin{figure}[!htbp]\centering
+ \fbox{\href{https://ec.europa.eu/eurostat/databrowser/view/namq_10_gdp__custom_16379707/default/table?lang=en}{\includegraphics[width=0.7\textwidth]{pdfetch_eurostat_gdp_0}}}
+\end{figure}
+
+\subsection*{Word Bank}
+\begin{figure}[!htbp]\centering
+ \fbox{\href{https://data.worldbank.org/indicator/NY.GDP.MKTP.CD}{\includegraphics[width=0.7\textwidth]{pdfetch_WB_gdp_0}}}
+\end{figure}
+
+\href{https://data.worldbank.org/}{\textcolor{NavyBlue}{The World Bank}} is inconsistent with country identification. It uses the standard ISO names for search (\texttt{BRN} for Brunei); however, variable names are only two-letter indicators (\texttt{NY.GDP.MKTP.CD.BN}).
+
+\subsection*{UN Comtrade Database}
+The UN Comtrade database can be accessed after registration. It provides detailed information about trade volumes across categories of goods. 
+
+%8fb28c48405841d293b5576fb90ba564
+
+\subsection*{Yahoo Finance}
+\href{https://finance.yahoo.com/}{\textcolor{NavyBlue}{Yahoo Finance}} offers various indicators. Tickers need to be rewritten completely without any shortening. 
+
+\begin{figure}[!htbp]\centering
+ \fbox{\href{https://finance.yahoo.com/quote/\%5EVIX/}{\includegraphics[width=0.7\textwidth]{yahoo_finance_0}}}
+\end{figure}
+
+\begin{lstlisting}
+library(pdfetch)
+
+ECZK_VIX <- pdfetch_YAHOO(
+  identifiers = c("EURCZK=X","^VIX"),
+  fields = c("close"),
+  from = as.Date("2020-01-01"),
+  to = Sys.Date(),
+  interval = c("monthly")
+)
+\end{lstlisting}
+
+There are some other packages for Finance Yahoo, but \texttt{pdfetch} works fine. 
+\section*{Macroeconomic Data}
+
+\subsection*{Gross Domestic Product}
+
+Library \href{https://cran.r-project.org/web/packages/pdfetch/index.html}{\texttt{\textcolor{NavyBlue}{pdfetch}}} provides functions that allow communication with the API of the World Bank, Eurostat, the ECB and other institutions.
+
+\begin{lstlisting}
+# Gross Domestic Product
+library(pdfetch)
+gdpData <- pdfetch_EUROSTAT("namq_10_gdp")
+\end{lstlisting}
+
+Going into specific time series of Czech governmental spending with calendar adjustments in current prices, million units of national currency (\texttt{UNIT="CP\_MNAC"}):
+
+\begin{lstlisting}
+pdfetch_EUROSTAT_DSD("namq_10_gdp") # available parameters
+gdpData2 <- pdfetch_EUROSTAT(flowRef="namq_10_gdp", from="2010-01-01", to="2025-05-31",
+ S_ADJ="CA", UNIT="CP_MNAC", GEO="CZ", NA_ITEM="P3_S13")
+\end{lstlisting}
+
+A description of available parameters is available only for the Eurostat database. 
+
+Data from the \href{https://data.worldbank.org/}{\textcolor{NavyBlue}{World Bank}} can be obtained easily with:
+
+\begin{lstlisting}
+library(pdfetch)
+gdpData <- pdfetch_WB("NY.GDP.MKTP.CD", c("BRN", "SGP", "THA", "VNM"))
+
+tail(gdpDataIn[ ,1], 3)
+           NY.GDP.MKTP.CD.BN
+2021-12-31       14006496614
+2022-12-31       16681536443
+2023-12-31       15128292981
+
+\end{lstlisting}
+
+See the inconsistency \texttt{BRN} in code and  \texttt{NY.GDP.MKTP.CD.BN} in outcome.
+
+\subsection*{International Trade}
+UN Comtrade database is reachable with the \href{https://cran.r-project.org/web/packages/comtradr/index.html}{\texttt{\textcolor{NavyBlue}{comtradr}}} library. Download total monthly exports from Czechia to Germany, Spain and Poland from Jan-2023 to Dec-2023. Free API allows only 12 months in one call.
+
+\begin{lstlisting}
+library(comtradr)
+
+totalTrade <- ct_get_data(
+  reporter = 'CZE',
+  partner = c('DEU', 'ESP','POL'),
+  commodity_code = 'TOTAL',
+  start_date = "2023-01",
+  end_date = "2023-12",
+  freq = "M",
+  flow_direction = 'export'
+)
+\end{lstlisting}
+
+
+\section*{Uncertainty and Sentiment}
+
+\subsection*{The Economic sentiment indicator -- European Commission on Eurostat}
+Look into Business and consumer surveys (\href{https://ec.europa.eu/eurostat/cache/metadata/en/ei\_bcs\_esms.htm}{\textcolor{NavyBlue}{eibcs}}) for details.
+
+\begin{lstlisting}
+# Economic sentiment analysis
+library(pdfetch)
+sentDataIn <- pdfetch_EUROSTAT("ei_bssi_m_r2")
+\end{lstlisting}
+
+\section*{Finance Data}
+\section*{Trade Paper Data}
+\end{document}
+
+
+Economics and finance:
+\begin{itemize}
+ \item World Bank, Eurostat, the ECB and other -- \href{https://cran.r-project.org/web/packages/pdfetch/index.html}{\texttt{\textcolor{NavyBlue}{pdfetch}}}
+ \item DBnomics Data -- \href{https://cran.r-project.org/web/packages/rdbnomics/index.html}{\texttt{\textcolor{NavyBlue}{rdbnomics}}}
+ \item United Nations Comtrade -- \href{https://cran.r-project.org/web/packages/comtradr/index.html}{\texttt{\textcolor{NavyBlue}{comtradr}}}
+ \item FRED, NBS (China) -- \href{https://cran.r-project.org/web/packages/pedquant/index.html}{\texttt{\textcolor{NavyBlue}{pedquant}}} 
+ \item Yahoo finance -- \href{https://cran.r-project.org/web/packages/yahoofinancer/index.html}{\texttt{\textcolor{NavyBlue}{yahoofinancer}}} or \href{https://cran.r-project.org/web/packages/yfinancer/index.html}{\textcolor{NavyBlue}{yfinancer}}
+\end{itemize}\medskip
+
+Other databases:
+\begin{itemize}
+ \item UNESCO Institute for Statistics -- \href{https://cran.r-project.org/web/packages/uisapi/index.html}{\texttt{\textcolor{NavyBlue}{uisapi}}}
+ \item Annual Regional Database of the European Commission -- \href{https://cran.r-project.org/web/packages/ARDECO/index.html}{\textcolor{NavyBlue}{ARDECO}}
+\end{itemize}
